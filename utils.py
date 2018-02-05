@@ -43,8 +43,6 @@ tf.app.flags.DEFINE_integer('num_gpus', 1, 'num of gpus')
 
 FLAGS = tf.app.flags.FLAGS
 
-# num_batches_per_epoch = int(num_train_samples/FLAGS.batch_size)
-
 encode_maps = {}
 decode_maps = {}
 
@@ -86,50 +84,6 @@ class DataIterator:
                     i+=1
                 else:
                     break
-        # self.image = []
-        # self.labels = []
-        # if istrain:
-        #     i=0
-        #     for root, sub_folder, file_list in os.walk(data_dir):
-        #         for file_path in file_list:
-        #             i+=1
-        #             if i%5 != 0:
-        #                 image_name = os.path.join(root, file_path)
-        #                 if os.path.exists(image_name):
-        #                     try:
-        #                         im = io.imread(image_name,as_grey=True)
-        #                         h = im.shape[0]
-        #                         l = im.shape[1]
-        #                         add = np.zeros((h,256-l)) + im[-1][-1]
-        #                         im = np.concatenate((im,add),axis = 1)
-
-        #                         #im = transform.resize(im, (FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel))
-        #                         self.image.append(im)
-        #                         code = image_name.split('/')[-1].split('.')[-2]
-        #                         code = [encode_maps[c] for c in list(code)]
-        #                         self.labels.append(code)
-        #                     except:
-        #                         continue
-        # else:
-        #     i=0
-        #     for root, sub_folder, file_list in os.walk(data_dir):
-        #         for file_path in file_list:
-        #             i+=1
-        #             if i%5 == 2:
-        #                 image_name = os.path.join(root, file_path)
-        #                 if os.path.exists(image_name):
-        #                     try:
-        #                         im = io.imread(image_name,as_grey=True)
-        #                         h = im.shape[0]
-        #                         l = im.shape[1]
-        #                         add = np.zeros((h,256-l)) + im[-1][-1]
-        #                         im = np.concatenate((im,add),axis = 1)                                
-        #                         self.image.append(im)
-        #                         code = image_name.split('/')[-1].split('.')[-2]
-        #                         code = [encode_maps[c] for c in list(code)]
-        #                         self.labels.append(code)
-        #                     except :
-        #                         continue
 
     @property
     def size(self):
