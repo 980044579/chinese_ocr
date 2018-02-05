@@ -2,10 +2,8 @@ import tensorflow as tf
 import utils
 from tensorflow.python.training import moving_averages
 
-
 FLAGS = utils.FLAGS
 num_classes = utils.num_classes
-
 
 class LSTMOCR(object):
     def __init__(self, mode):
@@ -28,7 +26,8 @@ class LSTMOCR(object):
     def _build_model(self):
         filters = [64, 128, 256, 512]
         strides = [1, 2]
-
+        
+                    #*************************layer cnn **************************
         with tf.variable_scope('cnn'):
             with tf.variable_scope('unit-1'):
                 x = self._conv2d(self.inputs, 'cnn-1', [3,3], 1, filters[0], [1,1])
@@ -67,21 +66,15 @@ class LSTMOCR(object):
                 x = tf.contrib.layers.batch_norm(x, scale=True, decay=0.99, scope='bn_42')
                 x = self._batch_norm('bn4_2', x)
                 x = self._leaky_relu(x, 0.01)
-            
+                
                 print(x.shape)
-      
-                #x = tf.reshape(x, [FLAGS.batch_size,-1,512])
+                
+                    #************************* transpose **************************
                 x = tf.transpose(x, [0, 2, 1,3])
                 x = tf.reshape(x, [FLAGS.batch_size,32,-1])
                 x.set_shape([FLAGS.batch_size,32, 1024])
                 print(x.shape)
-            #x = tf.transpose(x, [0, 2, 1])  # batch_size * 64 * 48
-            #shp = x.get_shape().as_list()
-            #x.set_shape([FLAGS.batch_size, filters[3], shp[1]])
-            #x.set_shape([FLAGS.batch_size, filters[3], 48])
-
-            # tf.nn.rnn_cell.RNNCell, tf.nn.rnn_cell.GRUCell
-
+                
                     #*************************layer rnn **************************
 
         for i in range(FLAGS.rnn_layers):            
@@ -93,7 +86,7 @@ class LSTMOCR(object):
                 print('lstm_'+ str(i) +':  ', x.get_shape())
 
             
-                    #*************************layer lstm_0 **************************
+                    #*************************layer fc **************************
             
         outputs = tf.reshape(x, [-1, 2 * FLAGS.num_hidden])
 
@@ -107,8 +100,6 @@ class LSTMOCR(object):
         self.logits = tf.reshape(self.logits, [FLAGS.batch_size, -1, num_classes])
             # Time major
         self.logits = tf.transpose(self.logits, (1, 0, 2))
-
-        
         
     def _build_train_op(self):
         self.global_step = tf.Variable(0, trainable=False)
@@ -125,24 +116,12 @@ class LSTMOCR(object):
                                                    FLAGS.decay_rate,
                                                    staircase=True)
 
-        # self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.lrn_rate,
-        #                                            momentum=FLAGS.momentum).minimize(self.cost,
-        #                                                                              global_step=self.global_step)
-        # self.optimizer = tf.train.MomentumOptimizer(learning_rate=self.lrn_rate,
-        #                                             momentum=FLAGS.momentum,
-        #                                             use_nesterov=True).minimize(self.cost,
-        #                                                                         global_step=self.global_step)
-
         self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.initial_learning_rate,
                                                 beta1=FLAGS.beta1,
                                                 beta2=FLAGS.beta2).minimize(self.loss,
                                                                             global_step=self.global_step)
         train_ops = [self.optimizer] + self._extra_train_ops
         self.train_op = tf.group(*train_ops)
-
-        # Option 2: tf.contrib.ctc.ctc_beam_search_decoder
-        # (it's slower but you'll get better results)
-        # decoded, log_prob = tf.nn.ctc_greedy_decoder(logits, seq_len,merge_repeated=False)
         self.decoded, self.log_prob = tf.nn.ctc_beam_search_decoder(self.logits,
                                                                     self.seq_len,
                                                                     merge_repeated=False)
